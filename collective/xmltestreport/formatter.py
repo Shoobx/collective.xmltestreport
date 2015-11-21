@@ -22,6 +22,9 @@ try:
 except ImportError:
     HAVE_MANUEL = False
 
+PRECISION = 5
+STRFMT = "%." + str(PRECISION) + "f"
+
 
 class TestSuiteInfo(object):
 
@@ -50,6 +53,10 @@ class TestCaseInfo(object):
         self.testName = testName
         self.failure = failure
         self.error = error
+
+def round_str(number):
+    return STRFMT % round(number, PRECISION)
+
 
 def get_test_class_name(test):
     """Compute the test class name from the test object."""
@@ -221,7 +228,7 @@ class XMLOutputFormattingWrapper(object):
             testSuiteNode.set('failures', str(suite.failures))
             testSuiteNode.set('hostname', hostname)
             testSuiteNode.set('name', name)
-            testSuiteNode.set('time', str(suite.time))
+            testSuiteNode.set('time', round_str(suite.time))
             testSuiteNode.set('timestamp', timestamp)
 
             propertiesNode = ElementTree.Element('properties')
@@ -240,7 +247,7 @@ class XMLOutputFormattingWrapper(object):
 
                 testCaseNode.set('classname', testCase.testClassName)
                 testCaseNode.set('name', testCase.testName)
-                testCaseNode.set('time', str(testCase.time))
+                testCaseNode.set('time', round_str(testCase.time))
 
                 if testCase.error:
                     errorNode = ElementTree.Element('error')
