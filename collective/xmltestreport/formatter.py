@@ -46,13 +46,15 @@ class TestSuiteInfo(object):
 class TestCaseInfo(object):
 
     def __init__(self, test, time, testClassName, testName, failure=None,
-                 error=None):
+                 error=None, extraData=None):
         self.test = test
         self.time = time
         self.testClassName = testClassName
         self.testName = testName
         self.failure = failure
         self.error = error
+        self.extraData = extraData
+
 
 def round_str(number):
     return STRFMT % round(number, PRECISION)
@@ -169,6 +171,10 @@ class XMLOutputFormattingWrapper(object):
         self._record(test, seconds)
         return self.delegate.test_success(test, seconds)
 
+    def test_skipped(self, test, reason):
+        self._record(test, 0, extraData=dict(skipped=reason))
+        return self.delegate.test_success(test, reason)
+
     def import_errors(self, import_errors):
         if import_errors:
             for test in import_errors:
@@ -199,7 +205,7 @@ class XMLOutputFormattingWrapper(object):
 
         suite = self._testSuites.setdefault(testSuite, TestSuiteInfo())
         suite.testCases.append(TestCaseInfo(
-            test, seconds, testClassName, testName, failure, error))
+            test, seconds, testClassName, testName, failure, error, extraData))
 
         if failure is not None:
             suite.failures += 1
@@ -284,6 +290,12 @@ class XMLOutputFormattingWrapper(object):
                     failureNode.set('message', errorMessage.split('\n')[0])
                     failureNode.set('type', str(excType))
                     failureNode.text = errorMessage + '\n\n' + stackTrace
+
+                if testCase.extraData is not None:
+                    for key, val in testCase.extraData.items():
+                        newNode = ElementTree.Element(key)
+                        testCaseNode.append(newNode)
+                        newNode.text = val
 
             # XXX: We don't have a good way to capture these yet
             systemOutNode = ElementTree.Element('system-out')
