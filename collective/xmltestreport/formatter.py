@@ -80,9 +80,11 @@ def filename_to_suite_name_parts(filename):
         # makes sense for the common egg naming patterns, and
         # will still work in other cases
 
+        # most zope packages source is in 'src', stop there
+
         suiteNameParts = []
         for part in reversed(filenameParts[i:-1]):
-            if '.' in part:
+            if part == 'src' or '.' in part:
                 break
             suiteNameParts.insert(0, part)
 
