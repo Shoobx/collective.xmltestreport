@@ -36,11 +36,20 @@ xmlOptions.add_option(
     help="""\
 If given, XML reports will be written to the current directory. If you created
 the testrunner using the buildout recipe provided by this package, this will
-be in the buildout `parts` directroy, e.g. `parts/test`.
+be in the buildout `parts` directory, e.g. `parts/test`.
 """)
+xmlOptions.add_option(
+    '--xml-setup-teardown', action="store_true", dest='xmlSetupTeardown',
+    help="""\
+If given, test setUp and tearDown runs will be also reported in the XML.
+Current shortcoming is that suites are not supported, output is collapsed
+into a `single.xml`.
+""")
+
 parser.add_option_group(xmlOptions)
 
 # Test runner and execution methods
+
 
 class XMLAwareRunner(Runner):
     """Add output formatter delegate to the test runner before execution
@@ -48,7 +57,10 @@ class XMLAwareRunner(Runner):
 
     def configure(self):
         super(XMLAwareRunner, self).configure()
-        self.options.output = XMLOutputFormattingWrapper(self.options.output, cwd=os.getcwd())
+        self.options.output = XMLOutputFormattingWrapper(
+            self.options.output, cwd=os.getcwd())
+
+        self.options.output.outputSetupTeardown = self.options.xmlSetupTeardown
 
 
 def run(defaults=None, args=None, script_parts=None):

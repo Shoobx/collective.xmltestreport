@@ -95,6 +95,14 @@ def filename_to_suite_name_parts(filename):
         return suiteNameParts
 
 
+def parse_layer(test):
+    if isinstance(test, basestring):
+        parts = test.split('.')
+        klass = '.'.join(parts[:-1])
+        return '', parts[-1], klass
+    return None, None, None
+
+
 def parse_doc_file_case(test):
     if not isinstance(test, doctest.DocFileCase):
         return None, None, None
@@ -151,6 +159,8 @@ class XMLOutputFormattingWrapper(object):
     operations, but also prepares an element tree of test output.
     """
 
+    outputSetupTeardown = False
+
     def __init__(self, delegate, cwd):
         self.delegate = delegate
         self._testSuites = {} # test class -> list of test names
@@ -181,7 +191,40 @@ class XMLOutputFormattingWrapper(object):
                 self._record(test, 0, error=test.exc_info)
         return self.delegate.import_errors(import_errors)
 
-    def _record(self, test, seconds, failure=None, error=None):
+    def start_set_up(self, layer_name):
+        """Report that we're setting up a layer."""
+        self._last_layer = layer_name
+        return self.delegate.start_set_up(layer_name)
+
+    def stop_set_up(self, seconds):
+        layer_name = self._last_layer
+        self._last_layer = None
+        if self.outputSetupTeardown:
+            self._record('%s:setUp' % (layer_name,), seconds)
+        return self.delegate.stop_set_up(seconds)
+
+    def start_tear_down(self, layer_name):
+        """Report that we're tearing down a layer."""
+        self._last_layer = layer_name
+        return self.delegate.start_tear_down(layer_name)
+
+    def stop_tear_down(self, seconds):
+        layer_name = self._last_layer
+        self._last_layer = None
+        if self.outputSetupTeardown:
+            self._record('%s:tearDown' % (layer_name,), seconds)
+        return self.delegate.stop_tear_down(seconds)
+
+    def tear_down_not_supported(self):
+        """Report that we could not tear down a layer."""
+        layer_name = self._last_layer
+        self._last_layer = None
+        self._record('%s:tearDown' % (layer_name,), 0,
+                     extraData=dict(skipped=u'Not supported'))
+        return self.delegate.tear_down_not_supported()
+
+    def _record(self, test, seconds, failure=None, error=None,
+                extraData=None):
         try:
             os.getcwd()
         except OSError:
@@ -189,7 +232,8 @@ class XMLOutputFormattingWrapper(object):
             # the default working directory.
             os.chdir(self.cwd)
 
-        for parser in [parse_doc_file_case,
+        for parser in [parse_layer,
+                       parse_doc_file_case,
                        parse_doc_test_case,
                        parse_manuel,
                        parse_startup_failure,
@@ -202,6 +246,10 @@ class XMLOutputFormattingWrapper(object):
             raise TypeError(
                 "Unknown test type: Could not compute testSuite, testName, "
                 "testClassName: %r" % test)
+
+        if self.outputSetupTeardown:
+            # cannot support setUp and tearDown output with split suites
+            testSuite = 'single'
 
         suite = self._testSuites.setdefault(testSuite, TestSuiteInfo())
         suite.testCases.append(TestCaseInfo(
@@ -273,7 +321,6 @@ class XMLOutputFormattingWrapper(object):
                     errorNode.text = errorMessage + '\n\n' + stackTrace
 
                 if testCase.failure:
-
                     failureNode = ElementTree.Element('failure')
                     testCaseNode.append(failureNode)
 
