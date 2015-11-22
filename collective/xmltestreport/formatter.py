@@ -160,6 +160,7 @@ class XMLOutputFormattingWrapper(object):
     """
 
     outputSetupTeardown = False
+    overrideSuiteName = None
 
     def __init__(self, delegate, cwd):
         self.delegate = delegate
@@ -250,6 +251,8 @@ class XMLOutputFormattingWrapper(object):
         if self.outputSetupTeardown:
             # cannot support setUp and tearDown output with split suites
             testSuite = 'single'
+        if self.overrideSuiteName is not None:
+            testSuite = self.overrideSuiteName
 
         suite = self._testSuites.setdefault(testSuite, TestSuiteInfo())
         suite.testCases.append(TestCaseInfo(

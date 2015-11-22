@@ -45,6 +45,12 @@ If given, test setUp and tearDown runs will be also reported in the XML.
 Current shortcoming is that suites are not supported, output is collapsed
 into a `single.xml`.
 """)
+xmlOptions.add_option(
+    '--xml-suite-name', action="store", dest='xmlOverrideSuiteName',
+    help="""\
+If given, overwrites testsuite names with the given string.
+Handy to set a/the output xml filename.
+""")
 
 parser.add_option_group(xmlOptions)
 
@@ -57,10 +63,13 @@ class XMLAwareRunner(Runner):
 
     def configure(self):
         super(XMLAwareRunner, self).configure()
-        self.options.output = XMLOutputFormattingWrapper(
-            self.options.output, cwd=os.getcwd())
+        so = self.options
+        so.output = XMLOutputFormattingWrapper(
+            so.output, cwd=os.getcwd())
 
-        self.options.output.outputSetupTeardown = self.options.xmlSetupTeardown
+        so.output.outputSetupTeardown = so.xmlSetupTeardown
+        if so.xmlOverrideSuiteName:
+            so.output.overrideSuiteName = so.xmlOverrideSuiteName
 
 
 def run(defaults=None, args=None, script_parts=None):
