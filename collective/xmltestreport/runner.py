@@ -94,7 +94,7 @@ def run_internal(defaults=None, args=None, script_parts=None):
         runner.run()
     finally:
         # Write XML file of results if -x option is given
-        if runner.options.xmlOutput:
+        if runner.options is not None and runner.options.xmlOutput:
             runner.options.output.writeXMLReports()
 
     return runner.failed
