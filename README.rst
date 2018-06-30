@@ -1,3 +1,7 @@
+.. image:: https://api.codeclimate.com/v1/badges/03a1167de19eec90c35d/maintainability
+   :target: https://codeclimate.com/github/Shoobx/collective.xmltestreport/maintainability
+   :alt: Maintainability
+
 Introduction
 ============
 
